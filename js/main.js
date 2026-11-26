@@ -9,6 +9,8 @@ let renderTimer;
 let spineData;
 
 let customScale = 1;
+let positionX = 0;
+let positionY = 0;
 let targetFps = 60;
 let bgmfile = './assets/audio/U mak3 m3 smil3.flac';
 let bgmvolume = 0;
@@ -32,7 +34,17 @@ let flipped = false;
 let transpose = 1;
 
 let currentTracks = []; // 跟踪当前播放的音频
-window.selectedLanguage = 'Japanese'; // 全局语言变量（挂载到window对象）
+let interfaceLanguage = 'default';
+let steamLanguage = '';
+let subtitleLanguagePreference = 'auto';
+window.selectedLanguage = 'English';
+const subtitleLocales = {
+	English: 'en',
+	Chinese: 'zh-Hans',
+	TraditionalChinese: 'zh-Hant',
+	Japanese: 'ja',
+	Korean: 'ko'
+};
 
 const CHARACTER = 'CH0189';
 let modelResolution = '8k';
@@ -56,6 +68,14 @@ const AUDIO_DETAIL = [
 			Chinese: [
 				"这，这样差不多就可以了吧？差不多该下来了……",
 				"虽然没打算放弃……"
+			],
+			TraditionalChinese: [
+				"這，這樣應該就行了吧？差不多該下船了……",
+				"雖然我也沒有，不想繼續的意思……"
+			],
+			Korean: [
+				"이, 이 정도면 괜찮지 않을까? 슬슬 내려가자…….",
+				"이제 그만하고 싶다든가, 그런 건 아니지만……."
 			]
 		}
 	},
@@ -72,6 +92,14 @@ const AUDIO_DETAIL = [
 			Chinese: [
 				"等、等下！！老师！您在干嘛！太晃了吧！",
 				"这个小艇很容易翻啊！！快停下来！"
+			],
+			TraditionalChinese: [
+				"等，等等！！老師！你在做什麼啦！很晃耶！",
+				"這艘船，很容易翻船的啦！！別鬧了！"
+			],
+			Korean: [
+				"잠, 잠깐!! 선생님! 뭐 하는 거야! 흔들리잖아!",
+				"이 보트, 뒤집히기 쉽다고!! 하지 마!"
 			]
 		}
 	},
@@ -88,6 +116,14 @@ const AUDIO_DETAIL = [
 			Chinese: [
 				"不是，什么叫感觉很有意思啊。",
 				"老师，别拿别人找乐子啊。"
+			],
+			TraditionalChinese: [
+				"不是，說什麼好像很有趣……",
+				"老師，別拿別人來玩樂。"
+			],
+			Korean: [
+				"아니, 재미있을 것 같아서라니.",
+				"선생님, 사람 가지고 놀지 마."
 			]
 		}
 	},
@@ -104,6 +140,14 @@ const AUDIO_DETAIL = [
 			Chinese: [
 				"……唉。算了。毕竟老师一直都是这样的人呢。",
 				"虽然我早就料到会发生这种事了……"
+			],
+			TraditionalChinese: [
+				"……唉，算了。反正老師本來就是這種人。",
+				"我早該預料到你會做這種事才對……"
+			],
+			Korean: [
+				"……하아. 아니다. 선생님은 원래 그런 사람이니까.",
+				"이럴 거라고 예상했어야 했는데……."
 			]
 		}
 	},
@@ -120,6 +164,14 @@ const AUDIO_DETAIL = [
 			Chinese: [
 				"嘛算了。刚好我也想到一个好点子。",
 				"来吧，老师！到我了！这次轮到老师了！"
+			],
+			TraditionalChinese: [
+				"好吧，沒關係。我也是有備而來的。",
+				"來吧，老師！我們交換！！這次輪到老師了唷！"
+			],
+			Korean: [
+				"뭐 괜찮아. 나도 생각난 게 있어서.",
+				"자, 선생님! 교대야!! 이번에는 선생님 차례라고!"
 			]
 		}
 	}
@@ -305,7 +357,8 @@ function drawHitboxes() {
 		n = (n / transpose) - (d[side].length / (transpose * 2));
 		n = n * customScale + (d[side].length / (transpose * 2));
 		n = (d[side].length / (transpose * 2)) - n;
-		return d[side].mid - n;
+		const offset = side === 'x' ? canvas.width * positionX : canvas.height * positionY;
+		return d[side].mid - n + offset;
 	}
 
 	for (const key in HITBOX) {
@@ -398,12 +451,45 @@ function setMouse(event) {
 		ax = canvas.width - ax;
 	}
 
-	return { x: ax, y: ay }
+	return { x: ax - canvas.width * positionX, y: ay - canvas.height * positionY };
+}
+
+function updateSubtitleLanguage() {
+	let language = subtitleLanguagePreference;
+	if (language === 'auto') {
+		const locale = interfaceLanguage === 'default' ? steamLanguage : interfaceLanguage;
+		const [primary, region] = locale.split(/[-_]/);
+		if (primary === 'tchinese' || (primary === 'zh' && ['cht', 'hant', 'tw', 'hk', 'mo'].includes(region))) {
+			language = 'TraditionalChinese';
+		} else if (primary === 'schinese' || primary === 'zh') {
+			language = 'Chinese';
+		} else if (primary === 'ja' || primary === 'japanese') {
+			language = 'Japanese';
+		} else if (primary === 'ko' || primary === 'korean' || primary === 'koreana') {
+			language = 'Korean';
+		} else {
+			language = 'English';
+		}
+	}
+
+	if (language === window.selectedLanguage) return;
+	window.selectedLanguage = language;
+	textbox.lang = subtitleLocales[language];
+	const clip = currentTracks.at(-1);
+	if (dialogBox && clip) textbox.textContent = clip.dialog[language][clip.index];
 }
 
 function init() {
 	// Wallpaper Engine settings
 	window.wallpaperPropertyListener = {
+		applyGeneralProperties: (props) => {
+			const language = props.language?.value ?? props.language;
+			const steamLocale = props.steamlanguage?.value ?? props.steamlanguage;
+			if (typeof language !== 'string' && typeof steamLocale !== 'string') return;
+			if (typeof language === 'string') interfaceLanguage = language.toLowerCase();
+			if (typeof steamLocale === 'string') steamLanguage = steamLocale.toLowerCase();
+			updateSubtitleLanguage();
+		},
 		applyUserProperties: (props) => {
 			if (props.schemecolor) {
 				bufferColor = props.schemecolor.value.split(" ");
@@ -412,8 +498,16 @@ function init() {
 			if (props.scale) {
 				customScale = props.scale.value;
 				document.documentElement.style.setProperty('--wallpaper-scale', customScale);
-				resize();
 			}
+			if (props.positionx) {
+				positionX = props.positionx.value / 100;
+				document.documentElement.style.setProperty('--wallpaper-position-x', props.positionx.value + 'vw');
+			}
+			if (props.positiony) {
+				positionY = props.positiony.value / 100;
+				document.documentElement.style.setProperty('--wallpaper-position-y', props.positiony.value + 'vh');
+			}
+			if (props.scale || props.positionx || props.positiony) resize();
 			if (props.targetfps) targetFps = props.targetfps.value;
 
 			if (props.introanimation) introAnimation = props.introanimation.value;
@@ -421,7 +515,7 @@ function init() {
 				const selected = props.modelresolution.value;
 				if (['2k', '4k', '8k'].includes(selected)) modelResolution = selected;
 			}
-			requestModelResolution();
+			requestModelResolution(Boolean(props.modelresolution));
 
 			if (props.mousetracking) mouseOptions.mousetracking = props.mousetracking.value;
 			if (props.headpatting) mouseOptions.headpatting = props.headpatting.value;
@@ -432,14 +526,10 @@ function init() {
 			if (props.dialogy) textbox.style.top = props.dialogy.value + '%';
 			if (props.drawHitboxes) mouseOptions.drawHitboxes = props.drawHitboxes.value;
 
-			// 新增：监听语言选择
 			if (props.dialoglanguage) {
-				window.selectedLanguage = props.dialoglanguage.value; // 更新全局语言变量
-				// 更新当前播放的音频文本
-				const clip = currentTracks[currentTracks.length - 1];
-				if (dialogBox && clip) {
-					textbox.textContent = clip.dialog[window.selectedLanguage][clip.index];
-				}
+				const language = props.dialoglanguage.value;
+				subtitleLanguagePreference = Object.hasOwn(subtitleLocales, language) ? language : 'auto';
+				updateSubtitleLanguage();
 			}
 			if (props.bgmfile) {
 				bgmfile = 'file:///' + props.bgmfile.value.replace("%3A", "\:");
@@ -461,6 +551,7 @@ function init() {
 	};
 
 	textbox = document.getElementById('textbox');
+	textbox.lang = subtitleLocales[window.selectedLanguage];
 
 	canvas = document.getElementById('canvas');
 	canvas.addEventListener('mouseleave', releaseHeadpatOnExit);
@@ -491,6 +582,7 @@ function init() {
 		if (typeof introAnimation === 'undefined') introAnimation = true;
 		requestModelResolution();
 	}, 350);
+	window.addEventListener('resize', resize);
 	window.addEventListener('pagehide', event => {
 		if (event.persisted) return;
 		canvas.style.visibility = 'hidden';
@@ -539,8 +631,8 @@ function interactionLoad() {
 	return 1;
 }
 
-function requestModelResolution() {
-	if (!assetManager || modelFrame || typeof introAnimation === 'undefined' || loadingResolution === modelResolution) return;
+function requestModelResolution(force = false) {
+	if (!assetManager || modelFrame || typeof introAnimation === 'undefined' || (!force && loadingResolution === modelResolution)) return;
 	loadingResolution = modelResolution;
 	const directory = loadingResolution === '8k' ? 'assets/' : 'assets/' + loadingResolution + '/';
 	const models = [CHARACTER + '_home'];
@@ -728,9 +820,12 @@ function render() {
 function resize() {
 	let w = canvas.clientWidth;
 	let h = canvas.clientHeight;
+	if (w === 0 || h === 0) return;
 	if (canvas.width != w || canvas.height != h) {
 		canvas.width = w;
 		canvas.height = h;
+		overlay.width = w;
+		overlay.height = h;
 	}
 
 	// Set values to position skeleton to center of canvas.
@@ -756,7 +851,7 @@ function resize() {
 		transpose = 1600 / canvas.height;
 	}
 
-	mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
+	mvp.ortho2d(centerX - width / 2 - positionX * width, centerY - height / 2 + positionY * height, width, height);
 	gl.viewport(0, 0, canvas.width, canvas.height);
 }
 
