@@ -43,7 +43,8 @@ const subtitleLocales = {
 	Chinese: 'zh-Hans',
 	TraditionalChinese: 'zh-Hant',
 	Japanese: 'ja',
-	Korean: 'ko'
+	Korean: 'ko',
+	Thai: 'th'
 };
 
 const CHARACTER = 'CH0189';
@@ -66,8 +67,8 @@ const AUDIO_DETAIL = [
 				"It's not that I want to stop or anything, but..."
 			],
 			Chinese: [
-				"这，这样差不多就可以了吧？差不多该下来了……",
-				"虽然没打算放弃……"
+				"测，测试到这个程度就可以了吧？我差不多也该下船了……",
+				"不过我也不是，现在不想玩的意思……"
 			],
 			TraditionalChinese: [
 				"這，這樣應該就行了吧？差不多該下船了……",
@@ -76,7 +77,8 @@ const AUDIO_DETAIL = [
 			Korean: [
 				"이, 이 정도면 괜찮지 않을까? 슬슬 내려가자…….",
 				"이제 그만하고 싶다든가, 그런 건 아니지만……."
-			]
+			],
+			Thai: ["คะ... แค่นี้ก็น่าจะพอแล้วมั้ง? ลงได้แล้วละ...","ใช่ว่าตอนนี้ฉัน อยากเลิกแล้วหรอกนะ..."]
 		}
 	},
 	{
@@ -90,8 +92,8 @@ const AUDIO_DETAIL = [
 				"Y-You're going to flip it over! Stop it!"
 			],
 			Chinese: [
-				"等、等下！！老师！您在干嘛！太晃了吧！",
-				"这个小艇很容易翻啊！！快停下来！"
+				"等，等一下！！老师干什么！这样很晃诶！！",
+				"再，再这样下去，这船很容易侧翻的！！呜哇！别闹啦！"
 			],
 			TraditionalChinese: [
 				"等，等等！！老師！你在做什麼啦！很晃耶！",
@@ -100,7 +102,8 @@ const AUDIO_DETAIL = [
 			Korean: [
 				"잠, 잠깐!! 선생님! 뭐 하는 거야! 흔들리잖아!",
 				"이 보트, 뒤집히기 쉽다고!! 하지 마!"
-			]
+			],
+			Thai: ["ดะ... เดี๋ยวสิ!! ทำอะไรน่ะ! คุณครู! มันโคลงเคลงนะ!","บานาน่าโบ๊ทอันนี้ มันคว่ำง่ายนะ!! หยุดนะ!"]
 		}
 	},
 	{
@@ -114,8 +117,8 @@ const AUDIO_DETAIL = [
 				"Sensei, quit messing with me!"
 			],
 			Chinese: [
-				"不是，什么叫感觉很有意思啊。",
-				"老师，别拿别人找乐子啊。"
+				"不是，有趣个头啦。",
+				"老师，不要把别人当玩具耍好不好。"
 			],
 			TraditionalChinese: [
 				"不是，說什麼好像很有趣……",
@@ -124,7 +127,8 @@ const AUDIO_DETAIL = [
 			Korean: [
 				"아니, 재미있을 것 같아서라니.",
 				"선생님, 사람 가지고 놀지 마."
-			]
+			],
+			Thai: ["อะไรกัน มันน่าสนุกงั้นเหรอ","คุณครู อย่าแกล้งกันเล่นสิ"]
 		}
 	},
 	{
@@ -138,8 +142,8 @@ const AUDIO_DETAIL = [
 				"I should have expected this..."
 			],
 			Chinese: [
-				"……唉。算了。毕竟老师一直都是这样的人呢。",
-				"虽然我早就料到会发生这种事了……"
+				"……哎，算了。反正老师本来就是这种人。",
+				"我早该想到会变成这样的……"
 			],
 			TraditionalChinese: [
 				"……唉，算了。反正老師本來就是這種人。",
@@ -148,7 +152,8 @@ const AUDIO_DETAIL = [
 			Korean: [
 				"……하아. 아니다. 선생님은 원래 그런 사람이니까.",
 				"이럴 거라고 예상했어야 했는데……."
-			]
+			],
+			Thai: ["เฮ้อ... ช่างเถอะ คุณครูก็เป็นคนอย่างนี้อยู่แล้ว","ฉันควรจะคิดไว้แท้ๆ ว่าต้องเป็นอย่างนี้..."]
 		}
 	},
 	{
@@ -162,8 +167,8 @@ const AUDIO_DETAIL = [
 				"All right, Sensei! It's your turn now!"
 			],
 			Chinese: [
-				"嘛算了。刚好我也想到一个好点子。",
-				"来吧，老师！到我了！这次轮到老师了！"
+				"哼，可以。我也有的是办法来治你。",
+				"好了，老师！交换时间到！！这回轮到老师了！"
 			],
 			TraditionalChinese: [
 				"好吧，沒關係。我也是有備而來的。",
@@ -172,7 +177,8 @@ const AUDIO_DETAIL = [
 			Korean: [
 				"뭐 괜찮아. 나도 생각난 게 있어서.",
 				"자, 선생님! 교대야!! 이번에는 선생님 차례라고!"
-			]
+			],
+			Thai: ["เอาเถอะ ไม่เป็นไรหรอก จู่ๆ ฉันก็คิดอะไรขึ้นมาได้น่ะ","เอาละ คุณครู! มาเปลี่ยนกัน!! รอบนี้เป็นตาของคุณครูบ้างแล้ว!"]
 		}
 	}
 ];
@@ -284,7 +290,7 @@ function playVoiceline() {
 			track.play().catch(finish);
 
 			if (dialogBox) {
-				textbox.textContent = dialog[window.selectedLanguage][index];
+				textbox.textContent = getSubtitleText(dialog, window.selectedLanguage, index);
 				textbox.style.opacity = 1;
 			}
 		},
@@ -454,6 +460,16 @@ function setMouse(event) {
 	return { x: ax - canvas.width * positionX, y: ay - canvas.height * positionY };
 }
 
+function getSubtitleText(dialog, language, index) {
+	let text = dialog?.[language]?.[index];
+	if (text == null && language === 'Thai') {
+		language = 'English';
+		text = dialog?.[language]?.[index];
+	}
+	textbox.lang = subtitleLocales[language];
+	return text ?? "";
+}
+
 function updateSubtitleLanguage() {
 	let language = subtitleLanguagePreference;
 	if (language === 'auto') {
@@ -467,6 +483,8 @@ function updateSubtitleLanguage() {
 			language = 'Japanese';
 		} else if (primary === 'ko' || primary === 'korean' || primary === 'koreana') {
 			language = 'Korean';
+		} else if (primary === 'th' || primary === 'thai') {
+			language = 'Thai';
 		} else {
 			language = 'English';
 		}
@@ -476,7 +494,7 @@ function updateSubtitleLanguage() {
 	window.selectedLanguage = language;
 	textbox.lang = subtitleLocales[language];
 	const clip = currentTracks.at(-1);
-	if (dialogBox && clip) textbox.textContent = clip.dialog[language][clip.index];
+	if (dialogBox && clip) textbox.textContent = getSubtitleText(clip.dialog, language, clip.index);
 }
 
 function init() {
